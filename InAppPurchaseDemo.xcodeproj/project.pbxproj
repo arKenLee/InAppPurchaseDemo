@@ -7,21 +7,29 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		9B401F1E1F2645DB001764AB /* NotificationMessageWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B401F1D1F2645DB001764AB /* NotificationMessageWindow.swift */; };
 		9B4879461F1D011800DA2EF8 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B4879451F1D011800DA2EF8 /* AppDelegate.swift */; };
-		9B4879481F1D011800DA2EF8 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B4879471F1D011800DA2EF8 /* ViewController.swift */; };
 		9B48794B1F1D011800DA2EF8 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 9B4879491F1D011800DA2EF8 /* Main.storyboard */; };
 		9B48794D1F1D011800DA2EF8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9B48794C1F1D011800DA2EF8 /* Assets.xcassets */; };
 		9B4879501F1D011800DA2EF8 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 9B48794E1F1D011800DA2EF8 /* LaunchScreen.storyboard */; };
+		9B4879581F1D018600DA2EF8 /* IAPManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B4879571F1D018600DA2EF8 /* IAPManager.swift */; };
+		9B5A7D371F2C49FF00E2832F /* IAPError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B5A7D361F2C49FF00E2832F /* IAPError.swift */; };
+		9BC4B6DA1F35D6C8008CCF84 /* ProductListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BC4B6D91F35D6C8008CCF84 /* ProductListViewController.swift */; };
+		9BC4B6DE1F35FD06008CCF84 /* PurchaseProductViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BC4B6DD1F35FD06008CCF84 /* PurchaseProductViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		9B401F1D1F2645DB001764AB /* NotificationMessageWindow.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NotificationMessageWindow.swift; sourceTree = "<group>"; };
 		9B4879421F1D011800DA2EF8 /* InAppPurchaseDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = InAppPurchaseDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9B4879451F1D011800DA2EF8 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
-		9B4879471F1D011800DA2EF8 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
 		9B48794A1F1D011800DA2EF8 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		9B48794C1F1D011800DA2EF8 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		9B48794F1F1D011800DA2EF8 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		9B4879511F1D011800DA2EF8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		9B4879571F1D018600DA2EF8 /* IAPManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = IAPManager.swift; sourceTree = "<group>"; };
+		9B5A7D361F2C49FF00E2832F /* IAPError.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = IAPError.swift; sourceTree = "<group>"; };
+		9BC4B6D91F35D6C8008CCF84 /* ProductListViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ProductListViewController.swift; sourceTree = "<group>"; };
+		9BC4B6DD1F35FD06008CCF84 /* PurchaseProductViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PurchaseProductViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -55,7 +63,11 @@
 			isa = PBXGroup;
 			children = (
 				9B4879451F1D011800DA2EF8 /* AppDelegate.swift */,
-				9B4879471F1D011800DA2EF8 /* ViewController.swift */,
+				9BC4B6D91F35D6C8008CCF84 /* ProductListViewController.swift */,
+				9BC4B6DD1F35FD06008CCF84 /* PurchaseProductViewController.swift */,
+				9B4879571F1D018600DA2EF8 /* IAPManager.swift */,
+				9B5A7D361F2C49FF00E2832F /* IAPError.swift */,
+				9B401F1D1F2645DB001764AB /* NotificationMessageWindow.swift */,
 				9B4879491F1D011800DA2EF8 /* Main.storyboard */,
 				9B48794C1F1D011800DA2EF8 /* Assets.xcassets */,
 				9B48794E1F1D011800DA2EF8 /* LaunchScreen.storyboard */,
@@ -136,7 +148,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				9B4879481F1D011800DA2EF8 /* ViewController.swift in Sources */,
+				9B4879581F1D018600DA2EF8 /* IAPManager.swift in Sources */,
+				9BC4B6DE1F35FD06008CCF84 /* PurchaseProductViewController.swift in Sources */,
+				9B5A7D371F2C49FF00E2832F /* IAPError.swift in Sources */,
+				9B401F1E1F2645DB001764AB /* NotificationMessageWindow.swift in Sources */,
+				9BC4B6DA1F35D6C8008CCF84 /* ProductListViewController.swift in Sources */,
 				9B4879461F1D011800DA2EF8 /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -204,7 +220,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 10.3;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
@@ -249,7 +265,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 10.3;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
@@ -262,6 +278,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				DEVELOPMENT_TEAM = "";
 				INFOPLIST_FILE = InAppPurchaseDemo/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.arkenlee.InAppPurchaseDemo;
@@ -274,6 +291,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				DEVELOPMENT_TEAM = "";
 				INFOPLIST_FILE = InAppPurchaseDemo/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.arkenlee.InAppPurchaseDemo;
@@ -301,6 +319,7 @@
 				9B4879561F1D011800DA2EF8 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
