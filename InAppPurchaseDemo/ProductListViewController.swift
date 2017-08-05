@@ -12,7 +12,7 @@ import StoreKit
 class ProductListViewController: UITableViewController {
     
     private(set) var products = [SKProduct]()
-    private let productIds: Set<String> = ["kaDa_1000", "kaDa3000"]
+    private let productIds: Set<String> = ["productId1", "productId2"]
     
     private var isFetchingProduct = false
     
