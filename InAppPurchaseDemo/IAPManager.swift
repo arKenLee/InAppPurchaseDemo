@@ -94,8 +94,38 @@ final class IAPManager: NSObject, SKProductsRequestDelegate, SKPaymentTransactio
         return result
     }
     
+    // MARK: SKProductsRequestDelegate
     
-    // MARK: Payment
+    // 商品信息响应回调
+    func productsRequest(_ request: SKProductsRequest, didReceive response: SKProductsResponse) {
+        // 失效的商品id
+        let invalidProductIdentifiers = response.invalidProductIdentifiers
+        if invalidProductIdentifiers.count > 0 {
+            print("invalidProductIdentifiers: \(invalidProductIdentifiers)")
+        }
+        
+        if let tuple = popProductRequestTuple(for: request) {
+            tuple.success?(response.products)
+        }
+    }
+    
+    
+    // MARK: SKRequestDelegate
+    
+    // 请求完成
+    func requestDidFinish(_ request: SKRequest) {
+        print("商品请求完成")
+    }
+    
+    // 请求失败
+    func request(_ request: SKRequest, didFailWithError error: Error) {
+        if let tuple = popProductRequestTuple(for: request) {
+            tuple.failure?(error)
+        }
+    }
+    
+    
+    // MARK: Purchase
     
     /// 根据商品id购买商品
     ///
@@ -160,92 +190,6 @@ final class IAPManager: NSObject, SKProductsRequestDelegate, SKPaymentTransactio
             block(error)
         }
     }
-    
-    
-    // MARK: Verify
-    
-    // In the test environment, use https://sandbox.itunes.apple.com/verifyReceipt
-    // In the real environment, use https://buy.itunes.apple.com/verifyReceipt
-    private let testEnvironmentVerifyURL = URL(string: "https://sandbox.itunes.apple.com/verifyReceipt")!
-    private let realEnvironmentVerifyURL = URL(string: "https://buy.itunes.apple.com/verifyReceipt")!
-    
-    func verify(realEnvironment: Bool, success: IAPManager.VerifyTransactionSuccessHandler?, failure: IAPManager.VerifyTransactionFailureHandler?)
-    {
-        guard let recepitURL = Bundle.main.appStoreReceiptURL else {
-            if let failure = failure {
-                let error = IAPError.receiptDataNotFound
-                failure(error)
-            }
-            return
-        }
-        
-        do {
-            let receiptData = try Data(contentsOf: recepitURL)
-            let base64ReceiptString = receiptData.base64EncodedString()
-            let requestContents = ["receipt-data": base64ReceiptString]
-            
-            let httpBody = try JSONSerialization.data(withJSONObject: requestContents, options: [])
-            
-            var request = URLRequest(url: realEnvironment ? realEnvironmentVerifyURL : testEnvironmentVerifyURL)
-            request.httpMethod = "POST"
-            request.httpBody = httpBody
-            
-            URLSession.shared.dataTask(with: request, completionHandler: { (data: Data?, response: URLResponse?, error: Error?) in
-                
-                if let error = error {
-                    print("验证失败: \(error)")
-                    if let failure = failure {
-                        DispatchQueue.main.async {
-                            failure(error)
-                        }
-                    }
-                }
-                else if let success = success {
-                    DispatchQueue.main.async {
-                        success(data, response)
-                    }
-                }
-            
-            }).resume()
-            
-        } catch let error {
-            print("验证支付凭证失败: \(error)")
-            failure?(error)
-        }
-    }
-    
-    
-    
-    // MARK: SKProductsRequestDelegate
-    
-    // 商品信息响应回调
-    func productsRequest(_ request: SKProductsRequest, didReceive response: SKProductsResponse) {
-        // 失效的商品id
-        let invalidProductIdentifiers = response.invalidProductIdentifiers
-        if invalidProductIdentifiers.count > 0 {
-            print("invalidProductIdentifiers: \(invalidProductIdentifiers)")
-        }
-        
-        if let tuple = popProductRequestTuple(for: request) {
-            tuple.success?(response.products)
-        }
-    }
-    
-    
-    // MARK: SKRequestDelegate
-    
-    // 请求完成
-    func requestDidFinish(_ request: SKRequest) {
-        print("商品请求完成")
-    }
-    
-    // 请求失败
-    func request(_ request: SKRequest, didFailWithError error: Error) {
-        if let tuple = popProductRequestTuple(for: request) {
-            tuple.failure?(error)
-        }
-    }
-    
     
     
     // MARK: SKPaymentTransactionObserver
@@ -332,6 +276,60 @@ final class IAPManager: NSObject, SKProductsRequestDelegate, SKPaymentTransactio
     func paymentQueue(_ queue: SKPaymentQueue, updatedDownloads downloads: [SKDownload]) {
         print("支付下载变化: \(downloads)")
     }
+    
+    
+    // MARK: Verify
+    
+    // In the test environment, use https://sandbox.itunes.apple.com/verifyReceipt
+    // In the real environment, use https://buy.itunes.apple.com/verifyReceipt
+    private let testEnvironmentVerifyURL = URL(string: "https://sandbox.itunes.apple.com/verifyReceipt")!
+    private let realEnvironmentVerifyURL = URL(string: "https://buy.itunes.apple.com/verifyReceipt")!
+    
+    func verify(realEnvironment: Bool, success: IAPManager.VerifyTransactionSuccessHandler?, failure: IAPManager.VerifyTransactionFailureHandler?)
+    {
+        guard let recepitURL = Bundle.main.appStoreReceiptURL else {
+            if let failure = failure {
+                let error = IAPError.receiptDataNotFound
+                failure(error)
+            }
+            return
+        }
+        
+        do {
+            let receiptData = try Data(contentsOf: recepitURL)
+            let base64ReceiptString = receiptData.base64EncodedString()
+            let requestContents = ["receipt-data": base64ReceiptString]
+            
+            let httpBody = try JSONSerialization.data(withJSONObject: requestContents, options: [])
+            
+            var request = URLRequest(url: realEnvironment ? realEnvironmentVerifyURL : testEnvironmentVerifyURL)
+            request.httpMethod = "POST"
+            request.httpBody = httpBody
+            
+            URLSession.shared.dataTask(with: request, completionHandler: { (data: Data?, response: URLResponse?, error: Error?) in
+                
+                if let error = error {
+                    print("验证失败: \(error)")
+                    if let failure = failure {
+                        DispatchQueue.main.async {
+                            failure(error)
+                        }
+                    }
+                }
+                else if let success = success {
+                    print("验证成功！")
+                    DispatchQueue.main.async {
+                        success(data, response)
+                    }
+                }
+            
+            }).resume()
+            
+        } catch let error {
+            print("验证支付凭证失败: \(error)")
+            failure?(error)
+        }
+    }
 }
 
 
@@ -374,9 +372,12 @@ extension SKPayment {
         let date      = self.requestData?.description
         let quantity  = self.quantity
         let username  = self.applicationUsername
-        let inSandbox = self.simulatesAskToBuyInSandbox
+        var inSandbox: Bool?
+        if #available(iOS 8.3, *) {
+            inSandbox = self.simulatesAskToBuyInSandbox
+        }
         
-        return "\(prefix){\n\tproductId = \(productId)'\n\tdate = \(String(describing: date));\n\tquantity = \(quantity);\n\tusername = \(String(describing: username));\n\tinSandbox = \(inSandbox);\n}"
+        return "\(prefix){\n\tproductId = \(productId)'\n\tdate = \(String(describing: date));\n\tquantity = \(quantity);\n\tusername = \(String(describing: username));\n\tinSandbox = \(String(describing: inSandbox));\n}"
     }
 }
 
@@ -416,9 +417,12 @@ extension SKPaymentTransaction {
             let date      = payment.requestData?.description ?? "nil"
             let quantity  = payment.quantity
             let username  = payment.applicationUsername ?? "nil"
-            let inSandbox = payment.simulatesAskToBuyInSandbox
+            var inSandbox: Bool?
+            if #available(iOS 8.3, *) {
+                inSandbox = payment.simulatesAskToBuyInSandbox
+            }
             
-            return "\(prefix){\n\t\tproductId = \(productId)'\n\t\tdate = \(date);\n\t\tquantity = \(quantity);\n\t\tusername = \(username);\n\t\tinSandbox = \(inSandbox);\n\t}"
+            return "\(prefix){\n\t\tproductId = \(productId)'\n\t\tdate = \(date);\n\t\tquantity = \(quantity);\n\t\tusername = \(username);\n\t\tinSandbox = \(String(describing: inSandbox));\n\t}"
         }
         
         let paymenDescription = paymentDescriptionByTransaction(self.payment)

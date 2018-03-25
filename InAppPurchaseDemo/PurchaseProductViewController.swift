@@ -39,8 +39,8 @@ class PurchaseProductViewController: UITableViewController {
             descriptionCell.detailTextLabel?.text = product.localizedDescription
         } else {
             let alertController = UIAlertController(title: "找不到该商品", message: nil, preferredStyle: .alert)
-            let cancelAction = UIAlertAction(title: "", style: .cancel) {[weak self] (_) in
-                self?.navigationController?.popViewController(animated: true)
+            let cancelAction = UIAlertAction(title: "知道了", style: .cancel) {[unowned self] (_) in
+                self.navigationController?.popViewController(animated: true)
             }
             alertController.addAction(cancelAction)
             self.present(alertController, animated: true, completion: nil)
@@ -53,26 +53,30 @@ class PurchaseProductViewController: UITableViewController {
         
         loadingIndicator.startAnimating()
         
+        let productName = product!.localizedTitle
+        
         IAPManager.shared.purchase(product: product!, success: {(transaction: SKPaymentTransaction) in
             
             IAPManager.shared.verify(realEnvironment: false, success: {[weak self] (data: Data?, response: URLResponse?) in
                 
                 sender.isEnabled = true
                 self?.loadingIndicator.stopAnimating()
+                NotificationMessageWindow.show(message: "购买【\(productName)】成功！")
                 
                 if let data = data, let json = try? JSONSerialization.jsonObject(with: data, options: .allowFragments) {
                     print("\(json)")
                 }
                 
             }) {[weak self] (error: Error) in
+                sender.isEnabled = true
                 self?.loadingIndicator.stopAnimating()
-                NotificationMessageWindow.show(message: error.localizedDescription)
+                NotificationMessageWindow.show(message: "购买【\(productName)】失败：\(error.localizedDescription)")
             }
             
         }) {[weak self] (error: Error) in
             sender.isEnabled = true
             self?.loadingIndicator.stopAnimating()
-            NotificationMessageWindow.show(message: error.localizedDescription)
+            NotificationMessageWindow.show(message: "购买【\(productName)】失败：\(error.localizedDescription)")
         }
     }
 }

@@ -63,7 +63,7 @@ class NotificationMessageWindow: UIWindow {
         }
     }
     
-    func dismiss() {
+    @objc func dismiss() {
         NSObject.cancelPreviousPerformRequests(withTarget: self)
         
         UIView.animate(withDuration: 0.5, delay: 0.0, options: [.curveEaseOut], animations: { [unowned self] in
@@ -86,7 +86,7 @@ class NotificationMessageWindow: UIWindow {
     }
     
     func displayDuration() -> TimeInterval {
-        let textLength = TimeInterval(self.label.text?.characters.count ?? 0)
+        let textLength = TimeInterval(self.label.text?.count ?? 0)
         return TimeInterval(max(textLength * 0.1, 3.0))
     }
     
@@ -102,7 +102,7 @@ class NotificationMessageWindow: UIWindow {
         
         let message = self.label.text ?? ""
         let font = self.label.font!
-        let textAttribute = [NSFontAttributeName: font]
+        let textAttribute = [NSAttributedStringKey.font: font]
         let options: NSStringDrawingOptions = [.usesLineFragmentOrigin, .usesFontLeading, .usesDeviceMetrics]
         
         let screenSize = UIScreen.main.bounds.size
