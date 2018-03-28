@@ -18,5 +18,8 @@ enum IAPError: Error {
     case canNotMakePayments
     case productNotFound(productId: String)
     case receiptDataNotFound
+    case verifyReceiptEmptyResponse
+    case verifyReceiptMalformedResponse
+    case verifyReceiptFailre(jsonResponse: [String: Any])
 }
 

@@ -18,11 +18,20 @@ final class IAPManager: NSObject, SKProductsRequestDelegate, SKPaymentTransactio
     typealias PurchaseSuccessHandler = (SKPaymentTransaction)->Void
     typealias RestorePurchaseSuccessHandler = (Array<SKPaymentTransaction>)->Void
     
-    typealias VerifyTransactionSuccessHandler = (Data?, URLResponse?)->Void
+    typealias VerifyTransactionSuccessHandler = ([String: Any], URLResponse?)->Void
     typealias VerifyTransactionFailureHandler = (Error) -> Void
     
     private typealias ProductRequestTuple = (request: SKProductsRequest, success: ProductsSuccessHandler?, failure: FailureHandler?)
     private typealias PaymentTuple = (productIdentifier: String, success: PurchaseSuccessHandler?, failure: FailureHandler?)
+    
+
+    class func invokeOnMainThread(_ block: @escaping ()->Void) {
+        if Thread.isMainThread {
+            block()
+        } else {
+            DispatchQueue.main.async(execute: block)
+        }
+    }
 
     
     // MARK: Properties
@@ -173,15 +182,41 @@ final class IAPManager: NSObject, SKProductsRequestDelegate, SKPaymentTransactio
     }
     
     
+    /// 购买商品
+    ///
+    /// - Parameters:
+    ///   - product: 商品
+    ///   - applicationUsername: 程序用户名，可以设置一个散列值来检测异常购买
+    ///   - quantity: 购买数量，设置范围至少为1，默认为1
+    ///   - simulatesAskToBuyInSandbox: 强制从沙盒购买
+    ///   - success: 成功回调
+    ///   - failure: 失败回调
+    func purchase(product: SKProduct, applicationUsername: String, quantity: Int = 1, simulatesAskToBuyInSandbox: Bool = false, success: IAPManager.PurchaseSuccessHandler?, failure: IAPManager.FailureHandler?) {
+        
+        if SKPaymentQueue.canMakePayments() {
+            let payment = SKMutablePayment(product: product)
+            payment.applicationUsername = applicationUsername
+            payment.quantity = max(1, quantity)
+            if #available(iOS 8.3, *) {
+                payment.simulatesAskToBuyInSandbox = simulatesAskToBuyInSandbox
+            }
+            payments.append((payment.productIdentifier, success, failure))
+            SKPaymentQueue.default().add(payment)
+        }
+        else {
+            invokeFailureBlockForCanNotMakePayment(failure)
+        }
+    }
+    
     /// 恢复购买
     ///
     /// - Parameters:
     ///   - success: 成功回调
     ///   - failure: 失败回调
-    func restorePurchases(success: IAPManager.RestorePurchaseSuccessHandler?, failure: IAPManager.FailureHandler?) {
+    func restorePurchases(withApplicationUsername username: String? = nil, success: IAPManager.RestorePurchaseSuccessHandler?, failure: IAPManager.FailureHandler?) {
         restorePurchaseSuccessHandler = success
         restorePurchaseFailureHandler = failure
-        SKPaymentQueue.default().restoreCompletedTransactions()
+        SKPaymentQueue.default().restoreCompletedTransactions(withApplicationUsername: username)
     }
     
     private func invokeFailureBlockForCanNotMakePayment(_ block: IAPManager.FailureHandler?) {
@@ -287,11 +322,24 @@ final class IAPManager: NSObject, SKProductsRequestDelegate, SKPaymentTransactio
     
     func verify(realEnvironment: Bool, success: IAPManager.VerifyTransactionSuccessHandler?, failure: IAPManager.VerifyTransactionFailureHandler?)
     {
-        guard let recepitURL = Bundle.main.appStoreReceiptURL else {
-            if let failure = failure {
-                let error = IAPError.receiptDataNotFound
-                failure(error)
+        func invokeSuccess(json: [String: Any], response: URLResponse?, handler: IAPManager.VerifyTransactionSuccessHandler?) {
+            if let handler = handler {
+                IAPManager.invokeOnMainThread {
+                    handler(json, response)
+                }
             }
+        }
+        
+        func invokeFailure(error: Error, handler: IAPManager.VerifyTransactionFailureHandler?) {
+            if let handler = handler {
+                IAPManager.invokeOnMainThread {
+                    handler(error)
+                }
+            }
+        }
+        
+        guard let recepitURL = Bundle.main.appStoreReceiptURL else {
+            invokeFailure(error: IAPError.receiptDataNotFound, handler: failure)
             return
         }
         
@@ -307,27 +355,51 @@ final class IAPManager: NSObject, SKProductsRequestDelegate, SKPaymentTransactio
             request.httpBody = httpBody
             
             URLSession.shared.dataTask(with: request, completionHandler: { (data: Data?, response: URLResponse?, error: Error?) in
-                
-                if let error = error {
-                    print("验证失败: \(error)")
-                    if let failure = failure {
-                        DispatchQueue.main.async {
-                            failure(error)
-                        }
-                    }
+                guard error == nil else {
+                    invokeFailure(error: error!, handler: failure)
+                    return
                 }
-                else if let success = success {
-                    print("验证成功！")
-                    DispatchQueue.main.async {
-                        success(data, response)
+                
+                guard let data = data else {
+                    invokeFailure(error: IAPError.verifyReceiptEmptyResponse, handler: failure)
+                    return
+                }
+                
+                do {
+                    guard let jsonResponse = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] else {
+                        invokeFailure(error: IAPError.verifyReceiptMalformedResponse, handler: failure)
+                        return
                     }
+
+                    guard let status = jsonResponse["status"] as? Int else {
+                        invokeFailure(error: IAPError.verifyReceiptFailre(jsonResponse: jsonResponse), handler: failure)
+                        return
+                    }
+                    
+                    if status == 0 {
+                        invokeSuccess(json: jsonResponse, response: response, handler: success)
+                    } else if status == 21007, realEnvironment {
+                        // status 为 21007 表示收据来自沙盒环境，但发送至生产环境验证，应将其发送至沙盒环境再次验证。
+                        IAPManager.invokeOnMainThread {
+                            IAPManager.shared.verify(realEnvironment: false, success: success, failure: failure)
+                        }
+                    } else if status == 21008, !realEnvironment {
+                        // status 为 21008 表示收据来自生产环境，但发送至沙盒环境验证，应将其发送至生产环境再次验证。
+                        IAPManager.invokeOnMainThread {
+                            IAPManager.shared.verify(realEnvironment: true, success: success, failure: failure)
+                        }
+                    } else {
+                        invokeFailure(error: IAPError.verifyReceiptFailre(jsonResponse: jsonResponse), handler: failure)
+                    }
+                    
+                } catch let serializationError {
+                    invokeFailure(error: serializationError, handler: failure)
                 }
             
             }).resume()
             
         } catch let error {
-            print("验证支付凭证失败: \(error)")
-            failure?(error)
+            invokeFailure(error: error, handler: failure)
         }
     }
 }
@@ -351,12 +423,23 @@ extension SKProduct {
     }
     
     var localizedPrice: String {
+        let formatter = NumberFormatter()
+        formatter.formatterBehavior = .behavior10_4
+        formatter.numberStyle = .currency
+        formatter.locale = self.priceLocale
+        if let formattedPrice = formatter.string(from: self.price) {
+            return formattedPrice
+        } else {
+            return self.price.description(withLocale: self.priceLocale)
+        }
+        /*
         if let symbol = self.priceLocale.currencySymbol {
             return (symbol + self.price.description(withLocale: self.priceLocale))
         }
         else {
             return self.price.description(withLocale: self.priceLocale)
         }
+        */
     }
     
     func printDescription() {

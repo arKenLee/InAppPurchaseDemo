@@ -55,28 +55,42 @@ class PurchaseProductViewController: UITableViewController {
         
         let productName = product!.localizedTitle
         
-        IAPManager.shared.purchase(product: product!, success: {(transaction: SKPaymentTransaction) in
-            
-            IAPManager.shared.verify(realEnvironment: false, success: {[weak self] (data: Data?, response: URLResponse?) in
-                
-                sender.isEnabled = true
-                self?.loadingIndicator.stopAnimating()
-                NotificationMessageWindow.show(message: "购买【\(productName)】成功！")
-                
-                if let data = data, let json = try? JSONSerialization.jsonObject(with: data, options: .allowFragments) {
-                    print("\(json)")
-                }
-                
-            }) {[weak self] (error: Error) in
-                sender.isEnabled = true
-                self?.loadingIndicator.stopAnimating()
-                NotificationMessageWindow.show(message: "购买【\(productName)】失败：\(error.localizedDescription)")
-            }
+        IAPManager.shared.purchase(product: product!, success: {[weak self] (transaction: SKPaymentTransaction) in
+        
+            self?.verifyReceipt(realEnvironment: true, productName: productName)
             
         }) {[weak self] (error: Error) in
             sender.isEnabled = true
             self?.loadingIndicator.stopAnimating()
             NotificationMessageWindow.show(message: "购买【\(productName)】失败：\(error.localizedDescription)")
+        }
+    }
+    
+    func verifyReceipt(realEnvironment: Bool, productName: String) {
+        IAPManager.shared.verify(realEnvironment: realEnvironment, success: {[weak self] (json: [String : Any], response: URLResponse?) in
+            
+            self?.purchaseButton.isEnabled = true
+            self?.loadingIndicator.stopAnimating()
+            NotificationMessageWindow.show(message: "购买【\(productName)】成功！")
+            print("\(json)")
+            
+        }) {[weak self] (error: Error) in
+            
+            if let iapError = error as? IAPError,
+                case let .verifyReceiptFailre(jsonResponse) = iapError,
+                let status = jsonResponse["status"] as? Int,
+                status == 21007, realEnvironment
+            {
+                // status 为 21007 表示收据来自沙盒环境，但发送至生产环境验证，应将其发送至沙盒环境再次验证。
+                print("误将沙盒环境的收据发送至生产环境")
+                self?.verifyReceipt(realEnvironment: false, productName: productName)
+                
+            } else {
+                self?.purchaseButton.isEnabled = true
+                self?.loadingIndicator.stopAnimating()
+                NotificationMessageWindow.show(message: "购买【\(productName)】失败：\(error.localizedDescription)")
+                print(error)
+            }
         }
     }
 }
